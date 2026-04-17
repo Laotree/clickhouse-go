@@ -129,7 +129,7 @@ func bindPositional(tz *time.Location, query string, args ...any) (_ string, err
 						}
 					}
 
-					value, err := format(tz, Seconds, v)
+					value, err := format(tz, NanoSeconds, v)
 					if err != nil {
 						return "", err
 					}
@@ -171,7 +171,7 @@ func bindNumeric(tz *time.Location, query string, args ...any) (_ string, err er
 				return "", nil
 			}
 		}
-		val, err := format(tz, Seconds, v)
+		val, err := format(tz, NanoSeconds, v)
 		if err != nil {
 			return "", err
 		}
@@ -206,7 +206,7 @@ func bindNamed(tz *time.Location, query string, args ...any) (_ string, err erro
 					return "", err
 				}
 			}
-			val, err := format(tz, Seconds, value)
+			val, err := format(tz, NanoSeconds, value)
 			if err != nil {
 				return "", err
 			}

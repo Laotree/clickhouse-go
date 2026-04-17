@@ -57,12 +57,14 @@ func TestIssue615(t *testing.T) {
 			ts time.Time
 		)
 		require.NoError(t, rows.Scan(&id, &ts))
+		require.Equal(t, "third", id)
+		require.Equal(t, ts3.In(time.UTC), ts)
 		i += 1
 	}
 	require.NoError(t, rows.Close())
 	require.NoError(t, rows.Err())
-	// loss of precision - should only get 1 result
-	assert.Equal(t, 2, i)
+	// Named() now defaults to NanoSeconds precision, so only 1 result is returned
+	assert.Equal(t, 1, i)
 	// use DateNamed to guarantee precision
 	rows, err = conn.Query(context.Background(), "SELECT id, ts from issue_615 where ts > @TS ORDER BY ts ASC", clickhouse.DateNamed("TS", ts2, clickhouse.NanoSeconds))
 	require.NoError(t, err)

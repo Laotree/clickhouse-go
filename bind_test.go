@@ -292,6 +292,34 @@ func TestFormatScaledTime(t *testing.T) {
 	require.Equal(t, "toDateTime64('2022-01-12 15:00:00.123456789', 9, 'UTC')", val)
 }
 
+// TestBindTimePreservesSubSecondPrecision verifies that time.Time values bound via
+// positional (?), numeric ($N), and named (@name) parameters are formatted with
+// nanosecond precision rather than being truncated to seconds.
+func TestBindTimePreservesSubSecondPrecision(t *testing.T) {
+	ts, _ := time.Parse("2006-01-02 15:04:05.000000000", "2022-01-12 15:00:00.123456789")
+
+	t.Run("positional", func(t *testing.T) {
+		got, err := bind(ts.Location(), "SELECT * FROM t WHERE ts = ?", ts)
+		require.NoError(t, err)
+		assert.Contains(t, got, "toDateTime64(")
+		assert.Contains(t, got, "123456789")
+	})
+
+	t.Run("numeric", func(t *testing.T) {
+		got, err := bind(ts.Location(), "SELECT * FROM t WHERE ts = $1", ts)
+		require.NoError(t, err)
+		assert.Contains(t, got, "toDateTime64(")
+		assert.Contains(t, got, "123456789")
+	})
+
+	t.Run("named", func(t *testing.T) {
+		got, err := bind(ts.Location(), "SELECT * FROM t WHERE ts = @TS", Named("TS", ts))
+		require.NoError(t, err)
+		assert.Contains(t, got, "toDateTime64(")
+		assert.Contains(t, got, "123456789")
+	})
+}
+
 func TestStringBasedType(t *testing.T) {
 	type (
 		SupperString       string
