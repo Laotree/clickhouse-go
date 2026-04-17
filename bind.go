@@ -237,21 +237,23 @@ func formatTime(tz *time.Location, scale TimeUnit, value time.Time) (string, err
 
 	switch locVal {
 	case "Local", "":
-		// It's required to pass timestamp as string due to decimal overflow for higher precision,
-		// but zero-value string "toDateTime('0')" will be not parsed by ClickHouse.
 		if value.Unix() == 0 {
 			return "toDateTime(0)", nil
 		}
 
+		// Pass Unix timestamps as unquoted integers so ClickHouse treats them as numeric
+		// timestamps rather than trying to parse them as datetime strings.
+		// toDateTime64('1641999600123456789', 9) would fail to parse as a datetime string,
+		// while toDateTime64(1641999600123456789, 9) is correctly interpreted as nanoseconds.
 		switch scale {
 		case Seconds:
-			return fmt.Sprintf("toDateTime('%d')", value.Unix()), nil
+			return fmt.Sprintf("toDateTime(%d)", value.Unix()), nil
 		case MilliSeconds:
-			return fmt.Sprintf("toDateTime64('%d', 3)", value.UnixMilli()), nil
+			return fmt.Sprintf("toDateTime64(%d, 3)", value.UnixMilli()), nil
 		case MicroSeconds:
-			return fmt.Sprintf("toDateTime64('%d', 6)", value.UnixMicro()), nil
+			return fmt.Sprintf("toDateTime64(%d, 6)", value.UnixMicro()), nil
 		case NanoSeconds:
-			return fmt.Sprintf("toDateTime64('%d', 9)", value.UnixNano()), nil
+			return fmt.Sprintf("toDateTime64(%d, 9)", value.UnixNano()), nil
 		}
 	case tz.String():
 		if scale == Seconds {
